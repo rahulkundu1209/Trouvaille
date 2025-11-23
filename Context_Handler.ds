@@ -1,0 +1,82 @@
+response = Map();
+response.put("action","context");
+response.put("context_id",context_id);
+if(context_id.startsWith("get_details"))
+{
+	pkgId = context_id.removeFirstOccurence("get_details_");
+	get_details = answers.get("get_details").get("text");
+	if(get_details.equalsIgnoreCase("No Thanks"))
+	{
+		response.put("action","end");
+		response.put("replies",{"Have a great day"});
+	}
+	else
+	{
+		if(!answers.containsKey("email"))
+		{
+			question = {"name":"email","replies":{{"text":"Can I have your email address please?","field_name":"siq_email","validate":{"format":"email","error":{"Enter a valid email"}}}}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			email = answers.get("email").get("text");
+			if(!answers.containsKey("name"))
+			{
+				question = {"name":"name","replies":{{"text":"Can I have your name please?","field_name":"siq_name"}}};
+				response.put("questions",{question});
+			}
+			else
+			{
+				name = answers.get("name").get("text");
+				if(!answers.containsKey("phone"))
+				{
+					question = {"name":"phone","replies":{{"text":"Can I have your phone number please?","validate":{"format":"phoneno","error":{"Enter a valid phone number"}},"field_name":"siq_phone"}}};
+					response.put("questions",{question});
+				}
+				else
+				{
+					phone = answers.get("phone").get("text");
+					response.put("action","end");
+					response.put("replies",{"Thank you"});
+					// Move to the link
+					lead_data = Map();
+					lead_data.put("name","Travel Inquiry - " + name);
+					lead_data.put("contact_name",name);
+					lead_data.put("email_from",email);
+					lead_data.put("phone",phone);
+					lead_data.put("description","Package selected: " + pkgId);
+					body = Map();
+					body.put("vals_list",{lead_data});
+					json_body = body.toString();
+					// 					info json_body;
+					odoo_response = invokeurl
+					[
+						url :"https://maa-jashoda-enterprise.odoo.com/json/2/crm.lead/create"
+						type :POST
+						body:json_body
+						connection:"trouvallietocrm"
+					];
+					// 					info odoo_response;
+					pkg_details_response = invokeurl
+					[
+						url :"https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id=PKG002"
+						type :GET
+					];
+					pkg_detail = pkg_details_response.get("package");
+					// 					info pkg_detail;
+					if(pkg_detail)
+					{
+						pkg_detail_reply = pkg_detail.get("name") + "\nDays: " + pkg_detail.get("days") + "\nLocation: " + pkg_detail.get("location") + "\nPrice: " + pkg_detail.get("price") + "\nItinerary: " + pkg_detail.get("itinerary");
+						response.put("replies",{pkg_detail_reply});
+					}
+					else
+					{
+						pkg_detail_reply = "Sorry! Some Error Occured!";
+						response.put("replies",{pkg_detail_reply});
+					}
+				}
+			}
+		}
+	}
+}
+return response;

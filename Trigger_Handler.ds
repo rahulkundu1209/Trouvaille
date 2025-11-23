@@ -1,0 +1,41 @@
+response = Map();
+res = invokeurl
+[
+	url :"https://script.google.com/macros/s/AKfycbwpEtwno-xpNgkyTqHginPiJA3M5ce5k8dnZVDiV8x7f-owzSjXbgc8Pla88hEuexFB/exec?action=getFeaturedPackages"
+	type :GET
+];
+packages = res.get("packages");
+//info packages;
+elements = List();
+for each  pkg in packages
+{
+	//info pkg;
+	element = Map();
+	element.put("title",pkg.get("name"));
+	element.put("subtitle",pkg.get("description"));
+	element.put("id",pkg.get("id"));
+	element.put("image",pkg.get("image_url"));
+	// 	info element;
+	// optional actions
+	actions = List();
+	act = Map();
+	act.put("label","Get Details");
+	act.put("name","get_details_" + pkg.get("id"));
+	act.put("type","passback");
+	// or "url" depending on behavior
+	act.put("link","_blank");
+	actions.add(act);
+	element.put("actions",actions);
+	elements.add(element);
+}
+prodWidget = Map();
+prodWidget.put("type","multiple-product");
+prodWidget.put("text","Here are our featured packages");
+prodWidget.put("elements",elements);
+replies = List();
+replies.add("Hi there! 👋");
+replies.add(prodWidget);
+replies.add("Anything specific in mind about your next trip?");
+response.put("replies",replies);
+// info response;
+return response;

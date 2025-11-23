@@ -1,0 +1,21 @@
+response = Map();
+msg = message.get("text");
+if(operation.equals("chat"))
+{
+	if(message.get("meta").containsKey("card_data"))
+	{
+		// 		info message;
+		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
+		// 		info pkgId;
+		contextId = "get_details_" + pkgId;
+		response.put("action","context");
+		response.put("context_id",contextId);
+		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"No Thanks","Yes Sure!"}};
+		response.put("questions",{question});
+	}
+	else
+	{
+	}
+}
+// info response;
+return response;
