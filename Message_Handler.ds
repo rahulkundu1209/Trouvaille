@@ -1,8 +1,9 @@
 response = Map();
 msg = message.get("text");
-if(operation.equals("chat"))
+if(!msg.isNull())
 {
-	if(message.get("meta").containsKey("card_data"))
+	info message;
+	if(message.get("text").endsWithIgnoreCase("Get Details"))
 	{
 		// 		info message;
 		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
@@ -13,8 +14,15 @@ if(operation.equals("chat"))
 		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"No Thanks","Yes Sure!"}};
 		response.put("questions",{question});
 	}
+	else if(message.get("text").equalsIgnoreCase("Show by my Preference")){
+		response.put("action", "context");
+		response.put("context_id", "take_preference");
+		question = {"name":"location_preference","replies":{"What is your Preferred Location?"}};
+		response.put("questions",{question});
+	}
 	else
 	{
+		info "Yet to complete";
 	}
 }
 // info response;

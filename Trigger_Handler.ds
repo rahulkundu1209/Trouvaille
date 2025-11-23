@@ -37,5 +37,6 @@ replies.add("Hi there! 👋");
 replies.add(prodWidget);
 replies.add("Anything specific in mind about your next trip?");
 response.put("replies",replies);
-// info response;
+response.put("suggestions", {"Show by my Preference"});
+info response;
 return response;

@@ -57,9 +57,11 @@ if(context_id.startsWith("get_details"))
 						connection:"trouvallietocrm"
 					];
 					// 					info odoo_response;
+					
+					pkg_details_url = "https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id="+pkgId;
 					pkg_details_response = invokeurl
 					[
-						url :"https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id=PKG002"
+						url :pkg_details_url
 						type :GET
 					];
 					pkg_detail = pkg_details_response.get("package");
@@ -78,5 +80,108 @@ if(context_id.startsWith("get_details"))
 			}
 		}
 	}
+}
+else if(context_id.equals("take_preference"))
+{
+// 	info "Taking preference!";
+	if(!answers.containsKey("location_preference")){
+		question = {"name":"location_preference","replies":{"Please enter your preferred location."}};
+		response.put("questions",{question});
+	}
+	else 
+    {
+		location_preference = answers.get("location_preference").get("text");
+		if(!answers.containsKey("days_preference")){
+			days_input = {
+            "type" : "range-slider",
+            "values" : [4, 8, 12, 16, 20, 30, 50]
+                };
+			question = {"name":"days_preference","replies":{"How many days you are planning to travel?"}, "input":days_input};
+			response.put("questions",{question});
+		}
+		else 
+        {
+			days_preference = answers.get("days_preference").get("text");
+			if(!answers.containsKey("budget_preference")){
+                budget_input = {
+                "type" : "range-slider",
+                "values" : [1000, 4000, 8000, 12000, 16000, 20000, 30000, 50000]
+                };
+				question = {"name":"budget_preference","replies":{"What is your budget range?"}, "input":budget_input};
+				response.put("questions",{question});
+				
+			}
+			else 
+            {
+// 				info answers;
+				budget_preference = answers.get("budget_preference").get("text");
+				preferences = {
+					"location": location_preference,
+					"days": days_preference.toList(" - "),
+					"budget": budget_preference.toList(" - ")
+				};
+				preferences.put("action", "filterPackages");
+				payload = preferences.toString();
+				res = invokeurl
+                [
+                	url: "https://script.google.com/macros/s/AKfycbzAop25rUw_MGAHS5uJnoiB_uzFd3vdAqbwrBylaBM1ASz3-FFOspikV1P2FcBrS2Bi/exec"
+                	type: POST
+                	body: payload
+					detailed: true
+                ];
+				resHeader = res.get("responseHeader");
+				redirectUrl = resHeader.get("location");
+// 				filter_res = invokeurl
+//                 [
+//                 	url: redirectUrl
+//                 	type: POST
+//                 	body: payload
+//                 ];
+				filter_res = getUrl(redirectUrl,true);
+// 				info filter_res;
+				packages = filter_res.get("packages");
+				if(packages.size()!=0){
+					elements = List();
+					for each  pkg in packages
+					{
+// 						info pkg;
+						element = Map();
+						element.put("title",pkg.get("name"));
+						element.put("subtitle",pkg.get("description"));
+						element.put("id",pkg.get("id"));
+						element.put("image",pkg.get("image_url"));
+						// 	info element;
+						// optional actions
+						actions = List();
+						act = Map();
+						act.put("label","Get Details");
+						act.put("name","get_details_" + pkg.get("id"));
+						act.put("type","passback");
+						// or "url" depending on behavior
+						act.put("link","_blank");
+						actions.add(act);
+						element.put("actions",actions);
+						elements.add(element);
+					}
+					prodWidget = Map();
+					prodWidget.put("type","multiple-product");
+					prodWidget.put("text","Here are our featured packages");
+					prodWidget.put("elements",elements);
+					replies = List();
+					replies.add(prodWidget);
+					response.put("action","reply");
+					response.put("replies",replies);
+					info response;
+				}
+				else 
+                {
+					replies = List();
+					replies.add("Sorry! No such package available!");
+					response.put("action","reply");
+					response.put("replies",replies);
+                }
+            }
+        }
+    }
 }
 return response;
