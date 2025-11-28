@@ -36,8 +36,6 @@ if(context_id.startsWith("get_details"))
 				else
 				{
 					phone = answers.get("phone").get("text");
-					response.put("action","end");
-					response.put("replies",{"Thank you"});
 					// Move to the link
 					lead_data = Map();
 					lead_data.put("name","Travel Inquiry - " + name);
@@ -57,8 +55,7 @@ if(context_id.startsWith("get_details"))
 						connection:"trouvallietocrm"
 					];
 					// 					info odoo_response;
-					
-					pkg_details_url = "https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id="+pkgId;
+					pkg_details_url = "https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id=" + pkgId;
 					pkg_details_response = invokeurl
 					[
 						url :pkg_details_url
@@ -68,8 +65,34 @@ if(context_id.startsWith("get_details"))
 					// 					info pkg_detail;
 					if(pkg_detail)
 					{
-						pkg_detail_reply = pkg_detail.get("name") + "\nDays: " + pkg_detail.get("days") + "\nLocation: " + pkg_detail.get("location") + "\nPrice: " + pkg_detail.get("price") + "\nItinerary: " + pkg_detail.get("itinerary");
-						response.put("replies",{pkg_detail_reply});
+						pkgTitle = pkg_detail.get("name");
+						pkgPrice = pkg_detail.get("price");
+						itinerary_list = pkg_detail.get("itinerary").toList(" | ");
+						itinerary = "";
+						for each  i in itinerary_list
+						{
+							itinerary = itinerary + i + "\n";
+						}
+						pkg_detail_reply = pkgTitle + "\nDays: " + pkg_detail.get("days") + "\nLocation: " + pkg_detail.get("location").toList(",").get(0) + "\nPrice: " + pkgPrice + "/-" + "\nItinerary: \n" + itinerary;
+						reply_details = Map();
+						reply_details.put("text",pkg_detail_reply);
+						reply_details.put("image",pkg_detail.get("image_url"));
+						reply_details.put("image_position","fill");
+						book_date_input = {"type":"calendar","time":"false","tz":"true","from":"+1","to":"+60","label":"Book Now","select_label":"Select Date"};
+						question = {"name":"book_date","replies":{reply_details,"Book Package: " + pkg_detail.get("name")},"input":book_date_input,"suggestions":{"Explore More"}};
+						response.put("action","context");
+						response.put("context_id","book_package");
+						// 						response.put("replies",{reply_details});
+						response.put("questions",{question});
+						info response;
+						session_map = Map();
+						session_map.put("name",name);
+						session_map.put("email",email);
+						session_map.put("phone",phone);
+						booking = {"package_id":pkgId,"package_title":pkgTitle,"package_price":pkgPrice};
+						session_map.put("custom_info",booking);
+						visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
+						info visitor_data_set_response;
 					}
 					else
 					{
@@ -83,68 +106,56 @@ if(context_id.startsWith("get_details"))
 }
 else if(context_id.equals("take_preference"))
 {
-// 	info "Taking preference!";
-	if(!answers.containsKey("location_preference")){
+	// 	info "Taking preference!";
+	if(!answers.containsKey("location_preference"))
+	{
 		question = {"name":"location_preference","replies":{"Please enter your preferred location."}};
 		response.put("questions",{question});
 	}
-	else 
-    {
+	else
+	{
 		location_preference = answers.get("location_preference").get("text");
-		if(!answers.containsKey("days_preference")){
-			days_input = {
-            "type" : "range-slider",
-            "values" : [4, 8, 12, 16, 20, 30, 50]
-                };
-			question = {"name":"days_preference","replies":{"How many days you are planning to travel?"}, "input":days_input};
+		if(!answers.containsKey("days_preference"))
+		{
+			days_input = {"type":"range-slider","values":{4,8,12,16,20,30,50}};
+			question = {"name":"days_preference","replies":{"How many days you are planning to travel?"},"input":days_input};
 			response.put("questions",{question});
 		}
-		else 
-        {
+		else
+		{
 			days_preference = answers.get("days_preference").get("text");
-			if(!answers.containsKey("budget_preference")){
-                budget_input = {
-                "type" : "range-slider",
-                "values" : [1000, 4000, 8000, 12000, 16000, 20000, 30000, 50000]
-                };
-				question = {"name":"budget_preference","replies":{"What is your budget range?"}, "input":budget_input};
+			if(!answers.containsKey("budget_preference"))
+			{
+				budget_input = {"type":"range-slider","values":{1000,4000,8000,12000,16000,20000,30000,50000}};
+				question = {"name":"budget_preference","replies":{"What is your budget range?"},"input":budget_input};
 				response.put("questions",{question});
-				
 			}
-			else 
-            {
-// 				info answers;
+			else
+			{
+				// 				info answers;
 				budget_preference = answers.get("budget_preference").get("text");
-				preferences = {
-					"location": location_preference,
-					"days": days_preference.toList(" - "),
-					"budget": budget_preference.toList(" - ")
-				};
-				preferences.put("action", "filterPackages");
+				preferences = {"location":location_preference,"days":days_preference.toList(" - "),"budget":budget_preference.toList(" - ")};
+				preferences.put("action","filterPackages");
 				payload = preferences.toString();
 				res = invokeurl
-                [
-                	url: "https://script.google.com/macros/s/AKfycbzAop25rUw_MGAHS5uJnoiB_uzFd3vdAqbwrBylaBM1ASz3-FFOspikV1P2FcBrS2Bi/exec"
-                	type: POST
-                	body: payload
-					detailed: true
-                ];
+				[
+					url :"https://script.google.com/macros/s/AKfycbzAop25rUw_MGAHS5uJnoiB_uzFd3vdAqbwrBylaBM1ASz3-FFOspikV1P2FcBrS2Bi/exec"
+					type :POST
+					body:payload
+					detailed:true
+				];
 				resHeader = res.get("responseHeader");
 				redirectUrl = resHeader.get("location");
-// 				filter_res = invokeurl
-//                 [
-//                 	url: redirectUrl
-//                 	type: POST
-//                 	body: payload
-//                 ];
 				filter_res = getUrl(redirectUrl,true);
-// 				info filter_res;
+				// 				info filter_res;
 				packages = filter_res.get("packages");
-				if(packages.size()!=0){
+				// Create Carousel Cards
+				if(packages.size() != 0)
+				{
 					elements = List();
 					for each  pkg in packages
 					{
-// 						info pkg;
+						// 						info pkg;
 						element = Map();
 						element.put("title",pkg.get("name"));
 						element.put("subtitle",pkg.get("description"));
@@ -156,7 +167,7 @@ else if(context_id.equals("take_preference"))
 						act = Map();
 						act.put("label","Get Details");
 						act.put("name","get_details_" + pkg.get("id"));
-						act.put("type","passback");
+						act.put("type",null);
 						// or "url" depending on behavior
 						act.put("link","_blank");
 						actions.add(act);
@@ -173,15 +184,182 @@ else if(context_id.equals("take_preference"))
 					response.put("replies",replies);
 					info response;
 				}
-				else 
-                {
+				else
+				{
 					replies = List();
 					replies.add("Sorry! No such package available!");
 					response.put("action","reply");
 					response.put("replies",replies);
-                }
-            }
-        }
-    }
+				}
+			}
+		}
+	}
+}
+else if(context_id.equals("book_package"))
+{
+	// 	info answers;
+	name = zoho.salesiq.visitorsession.get("maajashodaenterprise","name","salesiqconnection").get("data").get("name");
+	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
+	phone = zoho.salesiq.visitorsession.get("maajashodaenterprise","phone","salesiqconnection").get("data").get("phone");
+	book_pkg = zoho.salesiq.visitorsession.get("maajashodaenterprise","custom_info","salesiqconnection").get("data").get("custom_info");
+	book_date = answers.get("book_date").get("text").toList(" ").get(0).toString("yyyy-MM-dd");
+	info book_date;
+	if(!name || !email || !phone || !book_pkg)
+	{
+		response.put("action","reply");
+		response.put("replies",{"Invalid Booking Request!"});
+	}
+	else
+	{
+		//Display Booking Informations for confirmation
+		if(!answers.containsKey("proceed_status"))
+		{
+			question = {"name":"proceed_status","replies":{"Can you please confirm the following?" + "\nName: " + name + "\nEmail: " + email + "\nPackage: " + book_pkg.get("package_title") + "\nPrice: " + book_pkg.get("package_price") + "/-"},"input":{"type":"select","options":{"Confirm","Edit","Cancel Booking"}}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			proceed_status = answers.get("proceed_status").get("text");
+			if(proceed_status.equalsIgnoreCase("Confirm"))
+			{
+				response.put("action","reply");
+				response.put("replies",{"Invoice sent to email!"});
+				//Send the Invoice
+				//First check if the contact is present, if not create one.
+				invoice_response = invokeurl
+				[
+					url :"https://www.zohoapis.com/invoice/v3/contacts"
+					type :GET
+					connection:"packagebookinginvoice"
+				];
+				// 				info invoice_response;
+				contacts = invoice_response.get("contacts");
+				contact_id = "";
+				for each  contact in contacts
+				{
+					if(contact.get("email") == email)
+					{
+						contact_id = contact.get("contact_id");
+					}
+				}
+				if(contact_id == "")
+				{
+					contact_body = {"contact_name":name,"contact_persons":{{"email":email,"phone":phone,"is_primary_contact":true}}};
+					body = contact_body.toString();
+					invoice_response = invokeurl
+					[
+						url :"https://www.zohoapis.com/invoice/v3/contacts"
+						type :POST
+						body:body
+						connection:"packagebookinginvoice"
+					];
+					// 					info invoice_response;
+					contact_id = invoice_response.get("contact").get("contact_id");
+				}
+				// Write invoice POST request body
+				invoice_body = {"customer_id":contact_id,"date":today.toString("yyyy-MM-dd"),"line_items":{{"item_id":book_pkg.get("package_id"),"name":book_pkg.get("package_title") + " Date: " + book_date,"rate":book_pkg.get("package_price"),"quantity":1}}};
+				body = invoice_body.toString();
+				invoice_response = invokeurl
+				[
+					url :"https://www.zohoapis.com/invoice/v3/invoices"
+					type :POST
+					body:body
+					connection:"packagebookinginvoice"
+				];
+				// 				info invoice_response;
+				invoice_id = invoice_response.get("invoice").get("invoice_id");
+				// Send the invoice to the user
+				mail_body = {"send_from_org_email_id":true,"to_mail_ids":{email},"cc_mail_ids":{"rk1209.work@gmail.com"},"subject":"Invoice from Maa Jashoda Enterprise for Booking: " + book_pkg.get("package_title"),"body":"Dear Customer, Thank You for Booking!"};
+				body = mail_body.toString();
+				if(invoice_id)
+				{
+					invoice_response = invokeurl
+					[
+						url :"https://www.zohoapis.com/invoice/v3/invoices/" + invoice_id + "/email"
+						type :POST
+						body:body
+						connection:"packagebookinginvoice"
+					];
+					info invoice_response;
+					//Store the Booking Informations in Google Sheet
+					booking_body = {"action":"saveBooking","id":invoice_id,"package_id":book_pkg.get("package_id"),"email":email,"start_date":book_date};
+					res = invokeurl
+					[
+						url :"https://script.google.com/macros/s/AKfycbxurijHPMuxGP7L2hV2-3TsvIVeg9hEFtnmzqXRLqa4ISCO930cyR9V3aYViiLxu1rU/exec"
+						type :POST
+						body:booking_body.toString()
+						detailed:true
+					];
+					resHeader = res.get("responseHeader");
+					redirectUrl = resHeader.get("location");
+					sheet_response = getUrl(redirectUrl,true);
+					info sheet_response;
+				}
+			}
+			else if(proceed_status.equalsIgnoreCase("Cancel Booking"))
+			{
+				response.put("action","reply");
+				response.put("replies",{"Stopped Booking"});
+			}
+			else if(proceed_status.equalsIgnoreCase("Edit"))
+			{
+				response.put("action","reply");
+				response.put("replies",{"Editing Information"});
+			}
+		}
+	}
+}
+else if(context_id.equals("prev_booked_packages"))
+{
+	email = answers.get("email").get("text");
+	request_body = {"action":"getBookingsByEmail","email":email};
+	// 	info request_body;
+	body = request_body.toString();
+	res = invokeurl
+	[
+		url :"https://script.google.com/macros/s/AKfycbx64PGfGZ6DYCABl92nB3kMgbz1jAGG4oJI7bScCbL_1B1iEYlXEIsIvGGWg76Oe7MW/exec"
+		type :POST
+		body:body
+		detailed:true
+	];
+	// 	info res;
+	resHeader = res.get("responseHeader");
+	redirectUrl = resHeader.get("location");
+	booking_res = getUrl(redirectUrl,true);
+	// 	info booking_res;
+	bookings = booking_res.get("bookings");
+	// 	info bookings;
+	packages = List();
+	for each  booking in bookings
+	{
+		// 		feedback_input = {"type": "star-rating", "level": "5" };
+		action1 = {"label":"Give Feedback","name":"feedback_" + booking.get("id"),"type":"client_action","clientaction_name":"_blank"};
+		action2 = {"label":"Book Again","name":"book_again_" + booking.get("package_id"),"type":"postback","link":"_blank"};
+		subtitle = "Location: " + booking.get("package").get("location").toList(",").get(0) + " | " + "Date: " + booking.get("start_date");
+		elements = {{"id":booking.get("package").get("image_url"),"image":booking.get("package").get("image_url")}};
+		package = Map();
+		package.put("type","single-product");
+		package.put("text","Your Previous Bookings");
+		package.put("title",booking.get("package").get("name"));
+		package.put("subtitle",subtitle);
+		package.put("elements",elements);
+		package.put("actions",{action1,action2});
+		packages.add(package);
+	}
+	response.put("action","reply");
+	if(packages.size() != 0)
+	{
+		response.put("replies",packages);
+	}
+	else
+	{
+		response.put("replies",{"You don't have any booked package!"});
+		response.put("suggestions",{"Show By My Preference"});
+	}
+	info response;
+}
+else if(context_id.equals("_blank"))
+{
+	info "blank context";
 }
 return response;

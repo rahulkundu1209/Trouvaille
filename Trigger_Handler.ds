@@ -21,7 +21,7 @@ for each  pkg in packages
 	act = Map();
 	act.put("label","Get Details");
 	act.put("name","get_details_" + pkg.get("id"));
-	act.put("type","passback");
+	act.put("type",null);
 	// or "url" depending on behavior
 	act.put("link","_blank");
 	actions.add(act);
@@ -37,6 +37,6 @@ replies.add("Hi there! 👋");
 replies.add(prodWidget);
 replies.add("Anything specific in mind about your next trip?");
 response.put("replies",replies);
-response.put("suggestions", {"Show by my Preference"});
-info response;
+response.put("suggestions",{"Show by my Preference","Show My Previous Bookings"});
+// info response;
 return response;
