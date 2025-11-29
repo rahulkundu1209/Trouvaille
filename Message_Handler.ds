@@ -18,7 +18,7 @@ if(!msg.isNull())
 		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"No Thanks","Yes Sure!"}};
 		response.put("questions",{question});
 	}
-	else if(msg.equalsIgnoreCase("Show by my Preference"))
+	else if(msg.equalsIgnoreCase("Show By My Preferences"))
 	{
 		response.put("action","context");
 		response.put("context_id","take_preference");
