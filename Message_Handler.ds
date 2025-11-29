@@ -7,7 +7,7 @@ msg = message.get("text");
 if(!msg.isNull())
 {
 	info message;
-	if(message.get("text").endsWithIgnoreCase("Get Details"))
+	if(msg.endsWithIgnoreCase("Get Details"))
 	{
 		// 		info message;
 		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
@@ -18,21 +18,21 @@ if(!msg.isNull())
 		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"No Thanks","Yes Sure!"}};
 		response.put("questions",{question});
 	}
-	else if(message.get("text").equalsIgnoreCase("Show by my Preference"))
+	else if(msg.equalsIgnoreCase("Show by my Preference"))
 	{
 		response.put("action","context");
 		response.put("context_id","take_preference");
 		question = {"name":"location_preference","replies":{"What is your Preferred Location?"}};
 		response.put("questions",{question});
 	}
-	else if(message.get("text").equalsIgnoreCase("Show My Previous Bookings"))
+	else if(msg.equalsIgnoreCase("Show My Previous Bookings"))
 	{
 		response.put("action","context");
 		response.put("context_id","prev_booked_packages");
 		question = {"name":"email","replies":{{"text":"Can I have your booking email address please?","field_name":"siq_email","validate":{"format":"email","error":{"Enter a valid email"}}}}};
 		response.put("questions",{question});
 	}
-	else if(message.get("text").endsWithIgnoreCase("Book Again"))
+	else if(msg.endsWithIgnoreCase("Book Again"))
 	{
 		// 		info message;
 		name = message.get("text").remove("Book Again");
@@ -44,7 +44,7 @@ if(!msg.isNull())
 		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"Yes Sure!"}};
 		response.put("questions",{question});
 	}
-	else if(message.get("text").endsWithIgnoreCase("Give Feedback"))
+	else if(msg.endsWithIgnoreCase("Give Feedback"))
 	{
 		info message;
 		bookingId = message.get("meta").get("card_data").get("value").get("action").get("name").remove("feedback_");
@@ -57,8 +57,79 @@ if(!msg.isNull())
 	}
 	else
 	{
-		info message;
-		info "Yet to complete";
+// 		info msg;
+		req_body = Map();
+		req_body.put("prompt", msg);
+		body = req_body.toString();
+// 		info body;
+		ai_reply_res = invokeurl
+        [
+        	url: "https://peacetrail-travel-tourism.vercel.app/api/ai/reply"
+        	type: POST
+        	body:body
+        	headers: {"Content-Type": "application/json"}
+        ];
+		info ai_reply_res;
+		if(ai_reply_res.containsKey("content")){
+			content = ai_reply_res.get("content");
+			if(content.get("reply_present")==true){
+				replies = List();
+				replies.add(content.get("reply"));
+				
+				request_body = {"action":"filterPackagesByTags","tags":content.get("tags")};
+				// 	info request_body;
+				body = request_body.toString();
+				res = invokeurl
+				[
+					url :"https://script.google.com/macros/s/AKfycbxqlLF5wBh4ccQGSxNOANxyXzxAVJ-DfioTWTTJMGCpubf_F23Ct0XCh3QaV3nQ1pP7/exec"
+					type :POST
+					body:body
+					detailed:true
+				];
+				// 	info res;
+				resHeader = res.get("responseHeader");
+				redirectUrl = resHeader.get("location");
+				pkgs_res = getUrl(redirectUrl,true);
+				// 	info pkgs_res;
+				packages = pkgs_res.get("packages");
+// 				info packages;
+				if(packages.size()!=0){
+					elements = List();
+					for each  pkg in packages
+					{
+						// 						info pkg;
+						element = Map();
+						element.put("title",pkg.get("name"));
+						element.put("subtitle",pkg.get("description"));
+						element.put("id",pkg.get("id"));
+						element.put("image",pkg.get("image_url"));
+						// 	info element;
+						// optional actions
+						actions = List();
+						act = Map();
+						act.put("label","Get Details");
+						act.put("name","get_details_" + pkg.get("id"));
+						act.put("type",null);
+						// or "url" depending on behavior
+						act.put("link","_blank");
+						actions.add(act);
+						element.put("actions",actions);
+						elements.add(element);
+					}
+					prodWidget = Map();
+					prodWidget.put("type","multiple-product");
+					prodWidget.put("text","Here is some recomended packages.");
+					prodWidget.put("elements",elements);
+					replies.add(prodWidget);
+				}
+				response.put("action", "reply");
+				response.put("replies", replies);
+			}
+		}else{
+			response.put("action", "reply");
+			response.put("replies", {"Her is your custom reply!"});
+		}
+		
 	}
 }
 // info response;
