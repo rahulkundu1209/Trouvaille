@@ -37,6 +37,6 @@ replies.add("Hi there! 👋");
 replies.add(prodWidget);
 replies.add("Anything specific in mind about your next trip?");
 response.put("replies",replies);
-response.put("suggestions",{"Show by my Preference","Show My Previous Bookings"});
+response.put("suggestions",{"Show by my Preferences","Show My Previous Bookings"});
 // info response;
 return response;

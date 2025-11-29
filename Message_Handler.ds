@@ -32,15 +32,34 @@ if(!msg.isNull())
 		question = {"name":"email","replies":{{"text":"Can I have your booking email address please?","field_name":"siq_email","validate":{"format":"email","error":{"Enter a valid email"}}}}};
 		response.put("questions",{question});
 	}
+	else if(message.get("text").endsWithIgnoreCase("Book Again"))
+	{
+		// 		info message;
+		name = message.get("text").remove("Book Again");
+		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
+		info pkgId;
+		contextId = "book_again_" + pkgId;
+		response.put("action","context");
+		response.put("context_id",contextId);
+		question = {"name":"get_details","replies":{"Can you give us some informations?"},"suggestions":{"Yes Sure!"}};
+		response.put("questions",{question});
+	}
+	else if(message.get("text").endsWithIgnoreCase("Give Feedback"))
+	{
+		info message;
+		bookingId = message.get("meta").get("card_data").get("value").get("action").get("name").remove("feedback_");
+		info bookingId;
+		contextId = "give_feedback_" + bookingId;
+		response.put("action","context");
+		response.put("context_id",contextId);
+		question = {"name":"feedback_rating","replies":{"Give Rating"},"input":{"type":"star-rating","level":"5","set_conversation_rating":false}};
+		response.put("questions",{question});
+	}
 	else
 	{
 		info message;
 		info "Yet to complete";
 	}
 }
-// else if (input.containKey("clientaction"))
-// {
-// 	info "Handling client action";
-// }
 // info response;
 return response;

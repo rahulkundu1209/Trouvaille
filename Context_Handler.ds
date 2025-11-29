@@ -92,7 +92,7 @@ if(context_id.startsWith("get_details"))
 						booking = {"package_id":pkgId,"package_title":pkgTitle,"package_price":pkgPrice};
 						session_map.put("custom_info",booking);
 						visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
-						info visitor_data_set_response;
+						// 						info visitor_data_set_response;
 					}
 					else
 					{
@@ -312,6 +312,9 @@ else if(context_id.equals("book_package"))
 else if(context_id.equals("prev_booked_packages"))
 {
 	email = answers.get("email").get("text");
+	session_map = Map();
+	session_map.put("email",email);
+	visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
 	request_body = {"action":"getBookingsByEmail","email":email};
 	// 	info request_body;
 	body = request_body.toString();
@@ -330,20 +333,22 @@ else if(context_id.equals("prev_booked_packages"))
 	bookings = booking_res.get("bookings");
 	// 	info bookings;
 	packages = List();
+	count = 0;
 	for each  booking in bookings
 	{
+		count = count + 1;
 		// 		feedback_input = {"type": "star-rating", "level": "5" };
-		action1 = {"label":"Give Feedback","name":"feedback_" + booking.get("id"),"type":"client_action","clientaction_name":"_blank"};
-		action2 = {"label":"Book Again","name":"book_again_" + booking.get("package_id"),"type":"postback","link":"_blank"};
+		action1 = {"label":"Give Feedback","name":"feedback_" + booking.get("id"),"type":null,"link":"_blank"};
+		action2 = {"label":"Book Again","name":"book_again_" + booking.get("package_id"),"type":null,"link":"_blank"};
 		subtitle = "Location: " + booking.get("package").get("location").toList(",").get(0) + " | " + "Date: " + booking.get("start_date");
-		elements = {{"id":booking.get("package").get("image_url"),"image":booking.get("package").get("image_url")}};
+		elements = {{"id":booking.get("package_id"),"image":booking.get("package").get("image_url"),"title":booking.get("package").get("name"),"subtitle":subtitle,"actions":{action1,action2}}};
 		package = Map();
-		package.put("type","single-product");
-		package.put("text","Your Previous Bookings");
-		package.put("title",booking.get("package").get("name"));
-		package.put("subtitle",subtitle);
+		package.put("type","multiple-product");
+		package.put("text","Booking: " + count);
+		// 		package.put();
+		// 		package.put();
 		package.put("elements",elements);
-		package.put("actions",{action1,action2});
+		// 		package.put("actions",{action1,action2});
 		packages.add(package);
 	}
 	response.put("action","reply");
@@ -358,7 +363,108 @@ else if(context_id.equals("prev_booked_packages"))
 	}
 	info response;
 }
-else if(context_id.equals("_blank"))
+else if(context_id.startsWith("book_again_"))
+{
+	pkgId = context_id.remove("book_again_");
+	name = zoho.salesiq.visitorsession.get("maajashodaenterprise","name","salesiqconnection").get("data").get("name");
+	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
+	phone = zoho.salesiq.visitorsession.get("maajashodaenterprise","phone","salesiqconnection").get("data").get("phone");
+	info email;
+	info name;
+	info phone;
+	if(email == null && !answers.containsKey("email"))
+	{
+		question = {"name":"email","replies":{{"text":"Can I have your email address please?","field_name":"siq_email","validate":{"format":"email","error":{"Enter a valid email"}}}}};
+		response.put("questions",{question});
+	}
+	else
+	{
+		email = answers.get("email").get("text");
+		session_map = Map();
+		session_map.put("email",email);
+		visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
+		if(name == null && !answers.containsKey("name"))
+		{
+			question = {"name":"name","replies":{{"text":"Can I have your name please?","field_name":"siq_name"}}};
+			response.put("questions",{question});
+		}
+		else
+		{
+			name = answers.get("name").get("text");
+			session_map = Map();
+			session_map.put("name",name);
+			visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
+			if(phone == null && !answers.containsKey("phone"))
+			{
+				question = {"name":"phone","replies":{{"text":"Can I have your phone number please?","validate":{"format":"phoneno","error":{"Enter a valid phone number"}},"field_name":"siq_phone"}}};
+				response.put("questions",{question});
+			}
+			else
+			{
+				phone = answers.get("phone").get("text");
+				session_map = Map();
+				session_map.put("phone",phone);
+				pkg_details_url = "https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id=" + pkgId;
+				pkg_details_response = invokeurl
+				[
+					url :pkg_details_url
+					type :GET
+				];
+				pkg_detail = pkg_details_response.get("package");
+				// 					info pkg_detail;
+				booking = Map();
+				if(pkg_detail)
+				{
+					booking.put("package_id",pkgId);
+					pkgTitle = pkg_detail.get("name");
+					booking.put("package_title",pkgTitle);
+					pkgPrice = pkg_detail.get("price");
+					booking.put("package_price",pkgPrice);
+					session_map.put("custom_info",booking);
+					visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
+					book_date_input = {"type":"calendar","time":"false","tz":"true","from":"+1","to":"+60","label":"Book Now","select_label":"Select Date"};
+					question = {"name":"book_date","replies":{"Book Package: " + pkgTitle},"input":book_date_input,"suggestions":{"Explore More"}};
+					response.put("action","context");
+					response.put("context_id","book_package");
+					// 						response.put("replies",{reply_details});
+					response.put("questions",{question});
+				}
+				else
+				{
+					response.put("reply","end");
+					response.put("replies",{"Wrong Information"});
+				}
+			}
+		}
+	}
+}
+else if(context_id.startsWith("give_feedback_"))
+{
+	info answers;
+	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
+	pkgId = context_id.remove("give_feedback_");
+	rating = answers.get("feedback_rating").get("text");
+	if(!answers.containsKey("feedback_comment"))
+	{
+		question = {"name":"feedback_comment","replies":{{"text":"Write a comment please.","field_name":"siq_comment"}}};
+		response.put("questions",{question});
+	}
+	else
+	{
+		feedback_comment = answers.get("feedback_comment").get("text");
+		feedback_body = {"action":"saveFeedback","id":pkgId,"feedback_rating":rating,"feedback_comment":feedback_comment};
+		body = feedback_body.toString();
+		res = invokeurl
+		[
+			url :"https://script.google.com/macros/s/AKfycbx64PGfGZ6DYCABl92nB3kMgbz1jAGG4oJI7bScCbL_1B1iEYlXEIsIvGGWg76Oe7MW/exec"
+			type :POST
+			body:body
+		];
+		info res;
+		response.put("replies",{"Thanks for the feedback!"});
+	}
+}
+else
 {
 	info "blank context";
 }
