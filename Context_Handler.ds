@@ -179,6 +179,7 @@ else if(context_id.equals("take_preference"))
 					replies.add("Sorry! No such package available!");
 					response.put("action","reply");
 					response.put("replies",replies);
+					response.put("suggestions",{"Show By My Preferences"});
 				}
 			}
 		}
@@ -210,8 +211,7 @@ else if(context_id.equals("book_package"))
 			proceed_status = answers.get("proceed_status").get("text");
 			if(proceed_status.equalsIgnoreCase("Confirm"))
 			{
-				response.put("action","reply");
-				response.put("replies",{"Invoice sent to email!"});
+				
 				//Send the Invoice
 				//First check if the contact is present, if not create one.
 				invoice_response = invokeurl
@@ -278,6 +278,9 @@ else if(context_id.equals("book_package"))
 					redirectUrl = resHeader.get("location");
 					sheet_response = getUrl(redirectUrl,true);
 				}
+				response.put("action","reply");
+				response.put("replies",{"Invoice sent to email!"});
+				response.put("suggestions",{"Show My Previous Bookings"});
 			}
 			else if(proceed_status.equalsIgnoreCase("Cancel Booking"))
 			{
@@ -354,7 +357,9 @@ else if(context_id.startsWith("book_again_"))
 	}
 	else
 	{
-		email = answers.get("email").get("text");
+		if(answers.containsKey("email")){
+			email = answers.get("email").get("text");
+		}
 		session_map = Map();
 		session_map.put("email",email);
 		visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
