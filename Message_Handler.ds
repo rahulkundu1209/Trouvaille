@@ -1,17 +1,10 @@
 response = Map();
 msg = message.get("text");
-// info "operation";
-// info operation;
-// info "request";
-// info request;
 if(!msg.isNull())
 {
-	info message;
 	if(msg.endsWithIgnoreCase("Get Details"))
 	{
-		// 		info message;
 		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
-		// 		info pkgId;
 		contextId = "get_details_" + pkgId;
 		response.put("action","context");
 		response.put("context_id",contextId);
@@ -34,10 +27,8 @@ if(!msg.isNull())
 	}
 	else if(msg.endsWithIgnoreCase("Book Again"))
 	{
-		// 		info message;
 		name = message.get("text").remove("Book Again");
 		pkgId = message.get("meta").get("card_data").get("value").get("element").get("id");
-		info pkgId;
 		contextId = "book_again_" + pkgId;
 		response.put("action","context");
 		response.put("context_id",contextId);
@@ -46,9 +37,7 @@ if(!msg.isNull())
 	}
 	else if(msg.endsWithIgnoreCase("Give Feedback"))
 	{
-		info message;
 		bookingId = message.get("meta").get("card_data").get("value").get("action").get("name").remove("feedback_");
-		info bookingId;
 		contextId = "give_feedback_" + bookingId;
 		response.put("action","context");
 		response.put("context_id",contextId);
@@ -57,11 +46,9 @@ if(!msg.isNull())
 	}
 	else
 	{
-// 		info msg;
 		req_body = Map();
 		req_body.put("prompt", msg);
 		body = req_body.toString();
-// 		info body;
 		ai_reply_res = invokeurl
         [
         	url: "https://peacetrail-travel-tourism.vercel.app/api/ai/reply"
@@ -69,7 +56,6 @@ if(!msg.isNull())
         	body:body
         	headers: {"Content-Type": "application/json"}
         ];
-		info ai_reply_res;
 		if(ai_reply_res.containsKey("content")){
 			content = ai_reply_res.get("content");
 			if(content.get("reply_present")==true){
@@ -77,7 +63,6 @@ if(!msg.isNull())
 				replies.add(content.get("reply"));
 				
 				request_body = {"action":"filterPackagesByTags","tags":content.get("tags")};
-				// 	info request_body;
 				body = request_body.toString();
 				res = invokeurl
 				[
@@ -86,24 +71,19 @@ if(!msg.isNull())
 					body:body
 					detailed:true
 				];
-				// 	info res;
 				resHeader = res.get("responseHeader");
 				redirectUrl = resHeader.get("location");
 				pkgs_res = getUrl(redirectUrl,true);
-				// 	info pkgs_res;
 				packages = pkgs_res.get("packages");
-// 				info packages;
 				if(packages.size()!=0){
 					elements = List();
 					for each  pkg in packages
 					{
-						// 						info pkg;
 						element = Map();
 						element.put("title",pkg.get("name"));
 						element.put("subtitle",pkg.get("description"));
 						element.put("id",pkg.get("id"));
 						element.put("image",pkg.get("image_url"));
-						// 	info element;
 						// optional actions
 						actions = List();
 						act = Map();
@@ -132,5 +112,4 @@ if(!msg.isNull())
 		
 	}
 }
-// info response;
 return response;

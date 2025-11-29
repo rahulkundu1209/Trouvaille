@@ -46,7 +46,6 @@ if(context_id.startsWith("get_details"))
 					body = Map();
 					body.put("vals_list",{lead_data});
 					json_body = body.toString();
-					// 					info json_body;
 					odoo_response = invokeurl
 					[
 						url :"https://maa-jashoda-enterprise.odoo.com/json/2/crm.lead/create"
@@ -54,7 +53,6 @@ if(context_id.startsWith("get_details"))
 						body:json_body
 						connection:"trouvallietocrm"
 					];
-					// 					info odoo_response;
 					pkg_details_url = "https://script.google.com/macros/s/AKfycbxq7m_VIqYTnp4jwe4S-HonpXWRKb26qt5-iYrQYX5Hj1dny1M2FVgY4xO5Cdki0fTT/exec?action=getPackageById&id=" + pkgId;
 					pkg_details_response = invokeurl
 					[
@@ -62,7 +60,6 @@ if(context_id.startsWith("get_details"))
 						type :GET
 					];
 					pkg_detail = pkg_details_response.get("package");
-					// 					info pkg_detail;
 					if(pkg_detail)
 					{
 						pkgTitle = pkg_detail.get("name");
@@ -84,7 +81,6 @@ if(context_id.startsWith("get_details"))
 						response.put("context_id","book_package");
 						// 						response.put("replies",{reply_details});
 						response.put("questions",{question});
-						info response;
 						session_map = Map();
 						session_map.put("name",name);
 						session_map.put("email",email);
@@ -92,7 +88,6 @@ if(context_id.startsWith("get_details"))
 						booking = {"package_id":pkgId,"package_title":pkgTitle,"package_price":pkgPrice};
 						session_map.put("custom_info",booking);
 						visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
-						// 						info visitor_data_set_response;
 					}
 					else
 					{
@@ -106,7 +101,6 @@ if(context_id.startsWith("get_details"))
 }
 else if(context_id.equals("take_preference"))
 {
-	// 	info "Taking preference!";
 	if(!answers.containsKey("location_preference"))
 	{
 		question = {"name":"location_preference","replies":{"Please enter your preferred location."}};
@@ -132,7 +126,6 @@ else if(context_id.equals("take_preference"))
 			}
 			else
 			{
-				// 				info answers;
 				budget_preference = answers.get("budget_preference").get("text");
 				preferences = {"location":location_preference,"days":days_preference.toList(" - "),"budget":budget_preference.toList(" - ")};
 				preferences.put("action","filterPackages");
@@ -147,7 +140,6 @@ else if(context_id.equals("take_preference"))
 				resHeader = res.get("responseHeader");
 				redirectUrl = resHeader.get("location");
 				filter_res = getUrl(redirectUrl,true);
-				// 				info filter_res;
 				packages = filter_res.get("packages");
 				// Create Carousel Cards
 				if(packages.size() != 0)
@@ -155,13 +147,11 @@ else if(context_id.equals("take_preference"))
 					elements = List();
 					for each  pkg in packages
 					{
-						// 						info pkg;
 						element = Map();
 						element.put("title",pkg.get("name"));
 						element.put("subtitle",pkg.get("description"));
 						element.put("id",pkg.get("id"));
 						element.put("image",pkg.get("image_url"));
-						// 	info element;
 						// optional actions
 						actions = List();
 						act = Map();
@@ -182,7 +172,6 @@ else if(context_id.equals("take_preference"))
 					replies.add(prodWidget);
 					response.put("action","reply");
 					response.put("replies",replies);
-					info response;
 				}
 				else
 				{
@@ -197,7 +186,6 @@ else if(context_id.equals("take_preference"))
 }
 else if(context_id.equals("book_package"))
 {
-	// 	info answers;
 	name = zoho.salesiq.visitorsession.get("maajashodaenterprise","name","salesiqconnection").get("data").get("name");
 	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
 	phone = zoho.salesiq.visitorsession.get("maajashodaenterprise","phone","salesiqconnection").get("data").get("phone");
@@ -232,7 +220,6 @@ else if(context_id.equals("book_package"))
 					type :GET
 					connection:"packagebookinginvoice"
 				];
-				// 				info invoice_response;
 				contacts = invoice_response.get("contacts");
 				contact_id = "";
 				for each  contact in contacts
@@ -253,7 +240,6 @@ else if(context_id.equals("book_package"))
 						body:body
 						connection:"packagebookinginvoice"
 					];
-					// 					info invoice_response;
 					contact_id = invoice_response.get("contact").get("contact_id");
 				}
 				// Write invoice POST request body
@@ -266,7 +252,6 @@ else if(context_id.equals("book_package"))
 					body:body
 					connection:"packagebookinginvoice"
 				];
-				// 				info invoice_response;
 				invoice_id = invoice_response.get("invoice").get("invoice_id");
 				// Send the invoice to the user
 				mail_body = {"send_from_org_email_id":true,"to_mail_ids":{email},"cc_mail_ids":{"rk1209.work@gmail.com"},"subject":"Invoice from Maa Jashoda Enterprise for Booking: " + book_pkg.get("package_title"),"body":"Dear Customer, Thank You for Booking!"};
@@ -280,7 +265,6 @@ else if(context_id.equals("book_package"))
 						body:body
 						connection:"packagebookinginvoice"
 					];
-					info invoice_response;
 					//Store the Booking Informations in Google Sheet
 					booking_body = {"action":"saveBooking","id":invoice_id,"package_id":book_pkg.get("package_id"),"email":email,"start_date":book_date};
 					res = invokeurl
@@ -293,7 +277,6 @@ else if(context_id.equals("book_package"))
 					resHeader = res.get("responseHeader");
 					redirectUrl = resHeader.get("location");
 					sheet_response = getUrl(redirectUrl,true);
-					info sheet_response;
 				}
 			}
 			else if(proceed_status.equalsIgnoreCase("Cancel Booking"))
@@ -316,7 +299,6 @@ else if(context_id.equals("prev_booked_packages"))
 	session_map.put("email",email);
 	visitor_data_set_response = zoho.salesiq.visitorsession.set("maajashodaenterprise",session_map,"salesiqconnection");
 	request_body = {"action":"getBookingsByEmail","email":email};
-	// 	info request_body;
 	body = request_body.toString();
 	res = invokeurl
 	[
@@ -325,13 +307,10 @@ else if(context_id.equals("prev_booked_packages"))
 		body:body
 		detailed:true
 	];
-	// 	info res;
 	resHeader = res.get("responseHeader");
 	redirectUrl = resHeader.get("location");
 	booking_res = getUrl(redirectUrl,true);
-	// 	info booking_res;
 	bookings = booking_res.get("bookings");
-	// 	info bookings;
 	packages = List();
 	count = 0;
 	for each  booking in bookings
@@ -361,7 +340,6 @@ else if(context_id.equals("prev_booked_packages"))
 		response.put("replies",{"You don't have any booked package!"});
 		response.put("suggestions",{"Show By My Preference"});
 	}
-	info response;
 }
 else if(context_id.startsWith("book_again_"))
 {
@@ -369,9 +347,6 @@ else if(context_id.startsWith("book_again_"))
 	name = zoho.salesiq.visitorsession.get("maajashodaenterprise","name","salesiqconnection").get("data").get("name");
 	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
 	phone = zoho.salesiq.visitorsession.get("maajashodaenterprise","phone","salesiqconnection").get("data").get("phone");
-	info email;
-	info name;
-	info phone;
 	if(email == null && !answers.containsKey("email"))
 	{
 		question = {"name":"email","replies":{{"text":"Can I have your email address please?","field_name":"siq_email","validate":{"format":"email","error":{"Enter a valid email"}}}}};
@@ -411,7 +386,6 @@ else if(context_id.startsWith("book_again_"))
 					type :GET
 				];
 				pkg_detail = pkg_details_response.get("package");
-				// 					info pkg_detail;
 				booking = Map();
 				if(pkg_detail)
 				{
@@ -440,7 +414,6 @@ else if(context_id.startsWith("book_again_"))
 }
 else if(context_id.startsWith("give_feedback_"))
 {
-	info answers;
 	email = zoho.salesiq.visitorsession.get("maajashodaenterprise","email","salesiqconnection").get("data").get("email");
 	pkgId = context_id.remove("give_feedback_");
 	rating = answers.get("feedback_rating").get("text");
@@ -460,12 +433,8 @@ else if(context_id.startsWith("give_feedback_"))
 			type :POST
 			body:body
 		];
-		info res;
+		response.put("action","reply");
 		response.put("replies",{"Thanks for the feedback!"});
 	}
-}
-else
-{
-	info "blank context";
 }
 return response;

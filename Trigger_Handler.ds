@@ -5,17 +5,14 @@ res = invokeurl
 	type :GET
 ];
 packages = res.get("packages");
-//info packages;
 elements = List();
 for each  pkg in packages
 {
-	//info pkg;
 	element = Map();
 	element.put("title",pkg.get("name"));
 	element.put("subtitle",pkg.get("description"));
 	element.put("id",pkg.get("id"));
 	element.put("image",pkg.get("image_url"));
-	// 	info element;
 	// optional actions
 	actions = List();
 	act = Map();
@@ -38,5 +35,4 @@ replies.add(prodWidget);
 replies.add("Anything specific in mind about your next trip?");
 response.put("replies",replies);
 response.put("suggestions",{"Show By My Preferences","Show My Previous Bookings"});
-// info response;
 return response;
